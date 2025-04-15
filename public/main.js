@@ -1,18 +1,32 @@
 const socket = io();
 
-document.getElementById('chat-form').addEventListener('submit', (event) => {
-  event.preventDefault();
-  const messageInput = document.getElementById('message-input');
-  const message = messageInput.value;
-  if (message.trim() !== '') {
-    socket.emit('chat message', message);
-    messageInput.value = '';
+const nombreUsuario = prompt('¿Cuál es tu nombre?');
+
+
+
+document.getElementById('formulario-chat').addEventListener('submit', (evento) => {
+  evento.preventDefault();
+  const entradaMensaje = document.getElementById('entrada-mensaje');
+  const mensaje = entradaMensaje.value;
+  if (mensaje.trim() !== '') {
+    socket.emit('mensaje del chat', {
+      usuario: nombreUsuario,
+      texto: mensaje
+    });
+    entradaMensaje.value = '';
   }
 });
 
-socket.on('chat message', (message) => {
-  const messagesList = document.getElementById('messages');
-  const li = document.createElement('li');
-  li.textContent = message;
-  messagesList.appendChild(li);
+socket.on('mensaje del chat', (mensaje) => {
+  const listaMensajes = document.getElementById('mensajes');
+  const elemento = document.createElement('li');
+
+  if (mensaje.usuario === nombreUsuario) {
+    elemento.classList.add('mensaje-propio');
+  } else {
+    elemento.classList.add('mensaje-otro');
+  }
+
+  elemento.textContent = `${mensaje.usuario}: ${mensaje.texto}`;
+  listaMensajes.appendChild(elemento);
 });

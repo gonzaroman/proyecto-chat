@@ -12,9 +12,9 @@ server.listen(3000, () => {
 io.on('connection', (socket) => {
   console.log('Un usuario se ha conectado');
 
-  socket.on('chat message', (message) => {
+  socket.on('mensaje del chat', (message) => {
     console.log('Nuevo mensaje:', message);
-    io.emit('chat message', message);
+    io.emit('mensaje del chat', message);
   });
 
   socket.on('disconnect', () => {
