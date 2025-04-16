@@ -1,8 +1,6 @@
 const socket = io();
-
 const nombreUsuario = prompt('¿Cuál es tu nombre?');
-
-
+let ultimoUsuario = null; //  Recordar quién envió el último mensaje
 
 document.getElementById('formulario-chat').addEventListener('submit', (evento) => {
   evento.preventDefault();
@@ -27,6 +25,19 @@ socket.on('mensaje del chat', (mensaje) => {
     elemento.classList.add('mensaje-otro');
   }
 
-  elemento.textContent = `${mensaje.usuario}: ${mensaje.texto}`;
+  //  Solo mostrar el nombre si es distinto al anterior
+  if (mensaje.usuario !== ultimoUsuario) {
+    const nombreElemento = document.createElement('strong');
+    nombreElemento.textContent = `${mensaje.usuario}:\n`;
+    elemento.appendChild(nombreElemento);
+  }
+
+  // Texto del mensaje
+  const textoNodo = document.createTextNode(` ${mensaje.texto}`);
+  elemento.appendChild(textoNodo);
+
   listaMensajes.appendChild(elemento);
+
+  // Guardar el último usuario que escribió
+  ultimoUsuario = mensaje.usuario;
 });
