@@ -15,7 +15,15 @@ document.getElementById('formulario-chat').addEventListener('submit', (evento) =
   }
 });
 
-socket.on('mensaje del chat', (mensaje) => {
+socket.on('mensajes anteriores', (mensajes) => {
+  mensajes.forEach((mensaje) => {
+    mostrarMensaje(mensaje);
+  });
+});
+
+socket.on('mensaje del chat', mostrarMensaje);
+
+function mostrarMensaje(mensaje) {
   const listaMensajes = document.getElementById('mensajes');
   const elemento = document.createElement('li');
 
@@ -25,19 +33,15 @@ socket.on('mensaje del chat', (mensaje) => {
     elemento.classList.add('mensaje-otro');
   }
 
-  //  Solo mostrar el nombre si es distinto al anterior
   if (mensaje.usuario !== ultimoUsuario) {
     const nombreElemento = document.createElement('strong');
     nombreElemento.textContent = `${mensaje.usuario}:\n`;
     elemento.appendChild(nombreElemento);
   }
 
-  // Texto del mensaje
   const textoNodo = document.createTextNode(` ${mensaje.texto}`);
   elemento.appendChild(textoNodo);
-
   listaMensajes.appendChild(elemento);
 
-  // Guardar el último usuario que escribió
   ultimoUsuario = mensaje.usuario;
-});
+}
