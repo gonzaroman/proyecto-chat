@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Inicio del chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .sala {
+      background: #fff;
+      padding: 10px;
+      margin: 10px 0;
+      border-left: 4px solid #4CAF50;
+    }
+
+    .sala a {
+      text-decoration: none;
+      font-weight: bold;
+      color: #4CAF50;
+    }
+
+    input, button {
+      padding: 10px;
+      font-size: 1rem;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    #usuarios-activos {
+      background: #fff;
+      padding: 10px;
+      margin-top: 20px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="saludo">Bienvenido</h1>
+
+  <h2>Salas disponibles</h2>
+  <div id="salas"></div>
+
+  <h3>Crear nueva sala</h3>
+  <input type="text" id="nombreSala" placeholder="Nombre de la sala">
+  <button onclick="crearSala()">Crear sala</button>
+
+  <div id="usuarios-activos">
+    <h3>Usuarios conectados:</h3>
+    <ul id="lista-usuarios"></ul>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/home.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+      max-width: 400px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    input, button {
+      padding: 10px;
+      font-size: 1rem;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>Registro de usuario</h1>
+  <form id="form-registro">
+    <input type="text" id="nombre" placeholder="Nombre de usuario" required>
+    <input type="password" id="contraseña" placeholder="Contraseña" required>
+    <input type="password" id="repetir" placeholder="Repetir contraseña" required>
+    <button type="submit">Registrarse</button>
+  </form>
+
+  <script src="/registro.js"></script>
+</body>
+</html>

@@ -3,6 +3,11 @@ const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 
+
+
+app.use(express.json());
+
+
 //conexion a mongoDB
 
 const mongoose = require('mongoose');
@@ -36,8 +41,52 @@ app.use(express.static('public'));
 
 const path = require('path');
 
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'home.html'));
+});
+
+app.get('/salas', async (req, res) => {
+  const salas = await Sala.find().sort({ fechaCreacion: -1 });
+  res.json(salas);
+});
+
+
+app.post('/salas', async (req, res) => {
+  const { nombre, creador } = req.body;
+  const id = nombre.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substring(2, 5);
+  const nuevaSala = new Sala({ id, nombre, creador });
+  await nuevaSala.save();
+  res.json({ id });
+});
+
+
+const Usuario = require('./models/Usuario'); //modelo usuario
+const Sala = require('./models/Sala');
+
+app.post('/registro', async (req, res) => {
+  const { nombre, contraseña } = req.body;
+
+  if (!nombre || !contraseña) {
+    return res.status(400).json({ error: 'Faltan datos' });
+  }
+
+  const existe = await Usuario.findOne({ nombre });
+  if (existe) {
+    return res.status(400).json({ error: 'El usuario ya existe' });
+  }
+
+  const nuevo = new Usuario({ nombre, contraseña });
+  await nuevo.save();
+
+  res.status(201).json({ mensaje: 'Usuario creado' });
+});
+
+
+
+
 app.get('/sala/:id', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'chat.html'));
 });
 
 app.get('/crear-sala.html', (req, res) => {
@@ -49,8 +98,28 @@ server.listen(3000, () => {
   console.log('Servidor corriendo en el puerto 3000');
 });
 
+let usuariosConectados = [];
 io.on('connection', (socket) => {
   console.log('Un usuario se ha conectado');
+
+  
+
+  socket.on('usuario conectado', (nombre) => {
+    socket.nombre = nombre; // para identificar al desconectar
+    if (!usuariosConectados.includes(nombre)) {
+      usuariosConectados.push(nombre);
+    }
+    io.emit('lista usuarios', usuariosConectados);
+  });
+
+
+
+  
+  socket.on('disconnect', () => {
+    usuariosConectados = usuariosConectados.filter(u => u !== socket.nombre);
+    io.emit('lista usuarios', usuariosConectados);
+  });
+
 
   socket.on('unirse a sala', (idSala) => {
     socket.join(idSala);
@@ -85,8 +154,6 @@ Mensaje.find({ sala: idSala }).sort({ fecha: 1 }).limit(100)
   });
 
 
-  socket.on('disconnect', () => {
-    console.log('Un usuario se ha desconectado');
-  });
+ 
 });
 
