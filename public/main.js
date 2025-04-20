@@ -15,7 +15,11 @@ if (!idSala) {
 
 const socket = io();
 socket.emit('unirse a sala', idSala);
-const nombreUsuario = prompt('¿Cuál es tu nombre?');
+const nombreUsuario = localStorage.getItem('usuario');
+if (!nombreUsuario) {
+  alert(' Debes iniciar sesión primero');
+  window.location.href = '/registro.html'; // o /login.html si ya tienes login
+}
 let ultimoUsuario = null; //  Recordar quién envió el último mensaje
 
 
