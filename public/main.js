@@ -22,7 +22,24 @@ if (!nombreUsuario) {
 }
 let ultimoUsuario = null; //  Recordar quién envió el último mensaje
 
+// Cargar info de la sala y mostrar botón si eres el creador
+fetch(`/salas/${idSala}`)
+  .then(res => res.json())
+  .then(sala => {
+    if (sala.creador === nombreUsuario) {
+      document.getElementById('eliminar-sala').style.display = 'inline-block';
 
+      document.getElementById('eliminar-sala').addEventListener('click', () => {
+        if (confirm('¿Estás seguro de que quieres eliminar esta sala?')) {
+          fetch(`/salas/${idSala}`, { method: 'DELETE' })
+            .then(() => {
+              alert('Sala eliminada');
+              window.location.href = '/';
+            });
+        }
+      });
+    }
+  });
 
 
 

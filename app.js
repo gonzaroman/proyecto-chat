@@ -82,6 +82,32 @@ app.post('/registro', async (req, res) => {
   res.status(201).json({ mensaje: 'Usuario creado' });
 });
 
+app.post('/login', async (req, res) => {
+  const { nombre, contraseña } = req.body;
+
+  const usuario = await Usuario.findOne({ nombre });
+
+  if (!usuario || usuario.contraseña !== contraseña) {
+    return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+  }
+
+  res.json({ mensaje: 'Inicio de sesión correcto' });
+});
+
+app.get('/salas/:id', async (req, res) => {
+  const sala = await Sala.findOne({ id: req.params.id });
+  if (!sala) return res.status(404).json({ error: 'Sala no encontrada' });
+  res.json(sala);
+});
+
+app.delete('/salas/:id', async (req, res) => {
+  const sala = await Sala.findOneAndDelete({ id: req.params.id });
+  if (!sala) return res.status(404).json({ error: 'Sala no encontrada' });
+
+  await Mensaje.deleteMany({ sala: req.params.id }); // Elimina todos los mensajes de esa sala
+
+  res.status(200).json({ mensaje: 'Sala eliminada correctamente' });
+});
 
 
 
