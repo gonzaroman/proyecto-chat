@@ -21,6 +21,7 @@ mongoose.connect('mongodb://localhost:27017/chat', {
 const EsquemaMensaje = new mongoose.Schema({
   usuario: String,
   texto: String,
+  sala: String,
   fecha: { type: Date, default: Date.now }
 });
 
@@ -31,6 +32,19 @@ const Mensaje = mongoose.model('Mensaje', EsquemaMensaje);
 
 app.use(express.static('public'));
 
+
+
+const path = require('path');
+
+app.get('/sala/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/crear-sala.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'crear-sala.html'));
+});
+
+
 server.listen(3000, () => {
   console.log('Servidor corriendo en el puerto 3000');
 });
@@ -38,12 +52,17 @@ server.listen(3000, () => {
 io.on('connection', (socket) => {
   console.log('Un usuario se ha conectado');
 
+  socket.on('unirse a sala', (idSala) => {
+    socket.join(idSala);
+    console.log(`Usuario unido a sala ${idSala}`);
+
+
 // Enviar mensajes anteriores al conectarse
-Mensaje.find().sort({ fecha: 1 }).limit(100)
+Mensaje.find({ sala: idSala }).sort({ fecha: 1 }).limit(100)
 .then((mensajes) => {
   socket.emit('mensajes anteriores', mensajes);
 });
-
+});
 
 
  /* socket.on('mensaje del chat', (message) => {
@@ -57,16 +76,13 @@ Mensaje.find().sort({ fecha: 1 }).limit(100)
     console.log('Nuevo mensaje:', mensaje);
     nuevoMensaje.save()
       .then(() => {
-        io.emit('mensaje del chat', mensaje);
+       // io.emit('mensaje del chat', mensaje);
+       io.to(mensaje.sala).emit('mensaje del chat', mensaje); // Solo a esa sala
       })
       .catch((error) => {
         console.error('❌ Error al guardar el mensaje:', error);
       });
   });
-
-
-
-
 
 
   socket.on('disconnect', () => {

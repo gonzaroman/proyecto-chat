@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Crear sala de chat</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+
+    input {
+      padding: 10px;
+      width: 250px;
+      font-size: 1rem;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin-left: 10px;
+      font-size: 1rem;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>Crear nueva sala</h1>
+  <p>Introduce un nombre para tu sala:</p>
+  <input type="text" id="nombreSala" placeholder="Ej. cumpleaños-mario" />
+  <button onclick="crearSala()">Crear</button>
+
+  <script>
+    function crearSala() {
+      const nombre = document.getElementById('nombreSala').value.trim();
+      if (nombre !== '') {
+        // Generar un ID aleatorio para evitar duplicados
+        const id = nombre.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substr(2, 5);
+        console.log('ID generado:', id);
+        window.location.href = `/sala/${id}`;
+
+      } else {
+        alert('Por favor, escribe un nombre para la sala.');
+      }
+    }
+  </script>
+
+
+
+</body>
+</html>

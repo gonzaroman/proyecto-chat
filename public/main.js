@@ -1,6 +1,27 @@
+
+
+
+// Extraer el ID de sala desde la URL
+const url = new URL(window.location.href);
+const partesRuta = url.pathname.split('/');
+const idSala = partesRuta[2] || null;
+
+console.log('🟢 Sala detectada:', idSala);
+
+if (!idSala) {
+  alert('⚠️ No se ha especificado una sala. Redirigiendo...');
+  window.location.href = '/'; // O muestra un formulario para crearla
+}
+
 const socket = io();
+socket.emit('unirse a sala', idSala);
 const nombreUsuario = prompt('¿Cuál es tu nombre?');
 let ultimoUsuario = null; //  Recordar quién envió el último mensaje
+
+
+
+
+
 
 document.getElementById('formulario-chat').addEventListener('submit', (evento) => {
   evento.preventDefault();
@@ -9,7 +30,8 @@ document.getElementById('formulario-chat').addEventListener('submit', (evento) =
   if (mensaje.trim() !== '') {
     socket.emit('mensaje del chat', {
       usuario: nombreUsuario,
-      texto: mensaje
+      texto: mensaje,
+      sala: idSala
     });
     entradaMensaje.value = '';
   }
