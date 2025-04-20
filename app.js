@@ -3,13 +3,10 @@ const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 
-
-
 app.use(express.json());
 
 
 //conexion a mongoDB
-
 const mongoose = require('mongoose');
 
 // Conexión a MongoDB local
@@ -125,6 +122,8 @@ server.listen(3000, () => {
 });
 
 let usuariosConectados = [];
+let usuariosPorSala = {};
+
 io.on('connection', (socket) => {
   console.log('Un usuario se ha conectado');
 
@@ -144,12 +143,31 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     usuariosConectados = usuariosConectados.filter(u => u !== socket.nombre);
     io.emit('lista usuarios', usuariosConectados);
+
+    // Eliminar usuario de su sala (si estaba)
+    if (socket.salaId && usuariosPorSala[socket.salaId]) {
+      usuariosPorSala[socket.salaId] = usuariosPorSala[socket.salaId].filter(u => u !== socket.nombre);
+      io.to(socket.salaId).emit('usuarios en sala', usuariosPorSala[socket.salaId]);
+    }
   });
 
 
   socket.on('unirse a sala', (idSala) => {
     socket.join(idSala);
     console.log(`Usuario unido a sala ${idSala}`);
+
+    socket.salaId = idSala; // Guardar la sala actual en el socket
+
+  // Añadir al usuario en la sala
+  if (!usuariosPorSala[idSala]) {
+    usuariosPorSala[idSala] = [];
+  }
+
+  if (!usuariosPorSala[idSala].includes(socket.nombre)) {
+    usuariosPorSala[idSala].push(socket.nombre);
+  }
+
+  io.to(idSala).emit('usuarios en sala', usuariosPorSala[idSala]);
 
 
 // Enviar mensajes anteriores al conectarse

@@ -14,12 +14,17 @@ if (!idSala) {
 }
 
 const socket = io();
-socket.emit('unirse a sala', idSala);
 const nombreUsuario = localStorage.getItem('usuario');
+
+
 if (!nombreUsuario) {
   alert(' Debes iniciar sesión primero');
   window.location.href = '/registro.html'; // o /login.html si ya tienes login
 }
+
+socket.emit('usuario conectado', nombreUsuario);
+socket.emit('unirse a sala', idSala);
+
 let ultimoUsuario = null; //  Recordar quién envió el último mensaje
 
 // Cargar info de la sala y mostrar botón si eres el creador
@@ -44,7 +49,16 @@ fetch(`/salas/${idSala}`)
     }
   });
 
-
+  socket.on('usuarios en sala', (usuarios) => {
+    const lista = document.getElementById('usuarios-sala');
+    lista.innerHTML = '';
+    usuarios.forEach(usuario => {
+      const li = document.createElement('li');
+      li.textContent = usuario;
+      lista.appendChild(li);
+    });
+  });
+  
 
 
 document.getElementById('formulario-chat').addEventListener('submit', (evento) => {
