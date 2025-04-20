@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Privado</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    #mensajes { max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    #mensajes div { margin: 5px 0; }
+    #formulario { display: flex; gap: 10px; }
+    input { flex: 1; padding: 10px; }
+    button { padding: 10px; }
+  </style>
+
+<style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+
+    #mensajes {
+      list-style-type: none;
+      padding: 0;
+      margin-bottom: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+
+    #mensajes li {
+      padding: 5px 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    #formulario-chat {
+      display: flex;
+      gap: 10px;
+    }
+
+    #entrada-mensaje {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .mensaje-propio {
+      text-align: right;
+      background-color: #dcf8c6;
+      border-radius: 10px;
+      padding: 5px;
+      margin: 5px;
+    }
+
+    .mensaje-otro {
+      text-align: left;
+      background-color: #f1f0f0;
+      border-radius: 10px;
+      padding: 5px;
+      margin: 5px;
+    }
+
+    /* Agrupación visual de mensajes */
+.mensaje-propio,
+.mensaje-otro {
+  margin-top: 2px;
+  margin-bottom: 2px;
+  max-width: 70%;
+  padding: 6px 10px;
+  border-radius: 10px;
+  display: inline-block;
+  clear: both;
+  word-break: break-word;
+}
+
+.mensaje-propio {
+  background-color: #dcf8c6;
+  float: right;
+  text-align: right;
+}
+
+.mensaje-otro {
+  background-color: #f1f0f0;
+  float: left;
+  text-align: left;
+}
+
+/* Separación extra entre autores distintos */
+.separador-autor {
+  margin-top: 10px;
+  clear: both;
+}
+  </style>
+
+  
+</head>
+<body>
+  <h2>🔐 Chat privado con <span id="nombre-destino">...</span></h2>
+
+  <ul id="mensajes"></ul>
+
+
+  <form id="formulario">
+    <input type="text" id="entrada" placeholder="Escribe un mensaje..." autocomplete="off">
+    <button type="submit">Enviar</button>
+  </form>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/chat-privado.js"></script>
+</body>
+</html>

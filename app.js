@@ -116,6 +116,11 @@ app.get('/crear-sala.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'crear-sala.html'));
 });
 
+app.get('/privado/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'chat-privado.html'));
+});
+
+
 
 server.listen(3000, () => {
   console.log('Servidor corriendo en el puerto 3000');
@@ -124,18 +129,47 @@ server.listen(3000, () => {
 let usuariosConectados = [];
 let usuariosPorSala = {};
 
+const socketUsuarios = {};
+
 io.on('connection', (socket) => {
   console.log('Un usuario se ha conectado');
 
   
 
+  
+
   socket.on('usuario conectado', (nombre) => {
     socket.nombre = nombre; // para identificar al desconectar
+    socketUsuarios[nombre] = socket; // ✅ guardar el socket
     if (!usuariosConectados.includes(nombre)) {
       usuariosConectados.push(nombre);
     }
     io.emit('lista usuarios', usuariosConectados);
   });
+
+  // Unirse a sala privada
+socket.on('unirse a sala privada', async (idPrivado) => {
+  socket.join(idPrivado);
+
+  // Enviar mensajes anteriores (últimos 100)
+  const mensajes = await Mensaje.find({ sala: idPrivado }).sort({ fecha: 1 }).limit(100);
+  socket.emit('mensajes anteriores privados', mensajes);
+});
+
+// Enviar mensaje privado
+socket.on('mensaje privado', async ({ sala, de, para, texto }) => {
+  const mensaje = new Mensaje({
+    usuario: de,
+    texto,
+    sala, // <- el ID del chat privado, ej. pepe-tt
+    fecha: new Date()
+  });
+
+  await mensaje.save(); // ✅ Guarda en MongoDB
+
+  io.to(sala).emit('mensaje privado', { de, texto });
+});
+  
 
 
 

@@ -52,9 +52,23 @@ fetch(`/salas/${idSala}`)
   socket.on('usuarios en sala', (usuarios) => {
     const lista = document.getElementById('usuarios-sala');
     lista.innerHTML = '';
+  
     usuarios.forEach(usuario => {
+      if (usuario === nombreUsuario) return; // No te muestres a ti mismo
+  
       const li = document.createElement('li');
-      li.textContent = usuario;
+      const enlace = document.createElement('a');
+  
+      // Generar id del chat privado: ordenado alfabéticamente
+      const idPrivado = [nombreUsuario, usuario].sort().join('-');
+  
+      enlace.href = `/privado/${idPrivado}`;
+      enlace.textContent = usuario;
+      enlace.style.cursor = 'pointer';
+      enlace.style.textDecoration = 'underline';
+      enlace.style.color = '#007bff';
+  
+      li.appendChild(enlace);
       lista.appendChild(li);
     });
   });
@@ -119,6 +133,9 @@ listaMensajes.appendChild(elemento);
 
 //hasta aqui hora del mensaje
 
+
+// 🟢 Hacer scroll hacia abajo automáticamente
+lista.scrollTop = lista.scrollHeight;
 
 
 
