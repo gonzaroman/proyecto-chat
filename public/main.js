@@ -43,5 +43,24 @@ function mostrarMensaje(mensaje) {
   elemento.appendChild(textoNodo);
   listaMensajes.appendChild(elemento);
 
+
+//  Mostrar la hora del mensaje
+const fechaMensaje = new Date(mensaje.fecha || Date.now()); // Usa la fecha si existe o la actual
+const hora = fechaMensaje.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+const horaElemento = document.createElement('div');
+horaElemento.style.fontSize = '0.8em';
+horaElemento.style.color = '#888';
+horaElemento.style.marginTop = '2px';
+horaElemento.textContent = hora;
+
+elemento.appendChild(horaElemento);
+listaMensajes.appendChild(elemento);
+
+//hasta aqui hora del mensaje
+
+
+
+
   ultimoUsuario = mensaje.usuario;
 }
