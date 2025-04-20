@@ -26,8 +26,11 @@ let ultimoUsuario = null; //  Recordar quién envió el último mensaje
 fetch(`/salas/${idSala}`)
   .then(res => res.json())
   .then(sala => {
+    document.getElementById('nombre-sala').textContent = sala.nombre;
+
     if (sala.creador === nombreUsuario) {
       document.getElementById('eliminar-sala').style.display = 'inline-block';
+      
 
       document.getElementById('eliminar-sala').addEventListener('click', () => {
         if (confirm('¿Estás seguro de que quieres eliminar esta sala?')) {
