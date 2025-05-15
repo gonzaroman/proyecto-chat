@@ -1,9 +1,20 @@
 const express = require('express');
 const app = express();
 const server = require('http').createServer(app);
-const io = require('socket.io')(server);
+const io = require('socket.io')(server, {
+  cors: {
+    origin: 'http://localhost:4200',
+    methods: ['GET', 'POST']
+  }
+});
 
 app.use(express.json());
+
+const cors = require('cors');
+app.use(cors({
+  origin: 'http://localhost:4200'
+}));
+
 
 
 //conexion a mongoDB
@@ -14,8 +25,8 @@ mongoose.connect('mongodb://localhost:27017/chat', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
-.then(() => console.log('✅ Conectado a MongoDB local'))
-.catch((error) => console.error('❌ Error al conectar con MongoDB:', error));
+  .then(() => console.log('✅ Conectado a MongoDB local'))
+  .catch((error) => console.error('❌ Error al conectar con MongoDB:', error));
 
 
 
@@ -134,9 +145,9 @@ const socketUsuarios = {};
 io.on('connection', (socket) => {
   console.log('Un usuario se ha conectado');
 
-  
 
-  
+
+
 
   socket.on('usuario conectado', (nombre) => {
     socket.nombre = nombre; // para identificar al desconectar
@@ -147,33 +158,68 @@ io.on('connection', (socket) => {
     io.emit('lista usuarios', usuariosConectados);
   });
 
-  // Unirse a sala privada
-socket.on('unirse a sala privada', async (idPrivado) => {
-  socket.join(idPrivado);
 
-  // Enviar mensajes anteriores (últimos 100)
-  const mensajes = await Mensaje.find({ sala: idPrivado }).sort({ fecha: 1 }).limit(100);
-  socket.emit('mensajes anteriores privados', mensajes);
-});
+   // Alguien se une a una sala pública
+  socket.on('unirse a sala', (idSala) => {
+    // 1) Guardamos el nombre en el socket
 
-// Enviar mensaje privado
-socket.on('mensaje privado', async ({ sala, de, para, texto }) => {
-  const mensaje = new Mensaje({
-    usuario: de,
-    texto,
-    sala, // <- el ID del chat privado, ej. pepe-tt
-    fecha: new Date()
+    socket.join(idSala);
+    //socket.salaId = idSala; // Guardar la sala actual en el socket
+
+     socket.salaId = idSala; 
+
+    // Inicializar el array si no existe
+    if (!usuariosPorSala[idSala]) {
+      usuariosPorSala[idSala] = [];
+    }
+
+    // Añadir al usuario si no está ya
+    if (!usuariosPorSala[idSala].includes(socket.nombre)) {
+      usuariosPorSala[idSala].push(socket.nombre);
+    }
+
+    // Ahora sí; tras inicializar y añadir, registramos el array actual
+    console.log(`server: usuariosPorSala[${idSala}] =`, usuariosPorSala[idSala]);
+
+    // Emitir la lista actualizada a todos en esa sala
+    io.to(idSala).emit('usuarios en sala', usuariosPorSala[idSala]);
+
+    // Enviar mensajes anteriores
+    Mensaje.find({ sala: idSala })
+      .sort({ fecha: 1 })
+      .limit(100)
+      .then((mensajes) => {
+        socket.emit('mensajes anteriores', mensajes);
+      });
   });
 
-  await mensaje.save(); // ✅ Guarda en MongoDB
+  // Unirse a sala privada
+  socket.on('unirse a sala privada', async (idPrivado) => {
+    socket.join(idPrivado);
 
-  io.to(sala).emit('mensaje privado', { de, texto });
-});
-  
+    // Enviar mensajes anteriores (últimos 100)
+    const mensajes = await Mensaje.find({ sala: idPrivado }).sort({ fecha: 1 }).limit(100);
+    socket.emit('mensajes anteriores privados', mensajes);
+  });
+
+  // Enviar mensaje privado
+  socket.on('mensaje privado', async ({ sala, de, para, texto }) => {
+    const mensaje = new Mensaje({
+      usuario: de,
+      texto,
+      sala, // <- el ID del chat privado, ej. pepe-tt
+      fecha: new Date()
+    });
+
+    await mensaje.save(); // ✅ Guarda en MongoDB
+
+    io.to(sala).emit('mensaje privado', { de, texto });
+  });
 
 
 
-  
+
+
   socket.on('disconnect', () => {
     usuariosConectados = usuariosConectados.filter(u => u !== socket.nombre);
     io.emit('lista usuarios', usuariosConectados);
@@ -186,36 +232,13 @@ socket.on('mensaje privado', async ({ sala, de, para, texto }) => {
   });
 
 
-  socket.on('unirse a sala', (idSala) => {
-    socket.join(idSala);
-    console.log(`Usuario unido a sala ${idSala}`);
-
-    socket.salaId = idSala; // Guardar la sala actual en el socket
-
-  // Añadir al usuario en la sala
-  if (!usuariosPorSala[idSala]) {
-    usuariosPorSala[idSala] = [];
-  }
-
-  if (!usuariosPorSala[idSala].includes(socket.nombre)) {
-    usuariosPorSala[idSala].push(socket.nombre);
-  }
-
-  io.to(idSala).emit('usuarios en sala', usuariosPorSala[idSala]);
+ 
 
 
-// Enviar mensajes anteriores al conectarse
-Mensaje.find({ sala: idSala }).sort({ fecha: 1 }).limit(100)
-.then((mensajes) => {
-  socket.emit('mensajes anteriores', mensajes);
-});
-});
-
-
- /* socket.on('mensaje del chat', (message) => {
-    console.log('Nuevo mensaje:', message);
-    io.emit('mensaje del chat', message);
-  });*/
+  /* socket.on('mensaje del chat', (message) => {
+     console.log('Nuevo mensaje:', message);
+     io.emit('mensaje del chat', message);
+   });*/
 
 
   socket.on('mensaje del chat', (mensaje) => {
@@ -223,8 +246,8 @@ Mensaje.find({ sala: idSala }).sort({ fecha: 1 }).limit(100)
     console.log('Nuevo mensaje:', mensaje);
     nuevoMensaje.save()
       .then(() => {
-       // io.emit('mensaje del chat', mensaje);
-       io.to(mensaje.sala).emit('mensaje del chat', mensaje); // Solo a esa sala
+        // io.emit('mensaje del chat', mensaje);
+        io.to(mensaje.sala).emit('mensaje del chat', mensaje); // Solo a esa sala
       })
       .catch((error) => {
         console.error('❌ Error al guardar el mensaje:', error);
@@ -232,6 +255,6 @@ Mensaje.find({ sala: idSala }).sort({ fecha: 1 }).limit(100)
   });
 
 
- 
+
 });
 
