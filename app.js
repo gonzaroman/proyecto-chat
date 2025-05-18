@@ -131,6 +131,26 @@ app.get('/privado/:id', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'chat-privado.html'));
 });
 
+// Devuelve las conversaciones privadas de un usuario
+// BIEN: escucha en /privados/:usuario
+app.get('/privados/:usuario', async (req, res) => {
+  const usuario = req.params.usuario;
+  console.log('pidiendo privados para', usuario);
+  try {
+    const salas = await Mensaje.distinct('sala', {
+      sala: { $regex: new RegExp(`(^|-)${usuario}(-|$)`) }
+    });
+    const conversaciones = salas.map(salaId => {
+      const otro = salaId.split('-').find(u => u !== usuario) || '';
+      return { id: salaId, con: otro };
+    });
+    res.json(conversaciones);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Servidor' });
+  }
+});
+
 
 
 server.listen(3000, () => {
