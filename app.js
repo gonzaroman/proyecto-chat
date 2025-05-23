@@ -139,10 +139,14 @@ app.post('/login', async (req, res) => {
 
 
 // 4) Rutas estáticas (cliente)
-app.get('/',               (req,res) => res.sendFile(path.join(__dirname,'public','home.html')));
+/*app.get('/',               (req,res) => res.sendFile(path.join(__dirname,'public','home.html')));
 app.get('/sala/:id',       (req,res) => res.sendFile(path.join(__dirname,'public','chat.html')));
 app.get('/crear-sala.html',(req,res) => res.sendFile(path.join(__dirname,'public','crear-sala.html')));
-app.get('/privado/:id',    (req,res) => res.sendFile(path.join(__dirname,'public','chat-privado.html')));
+app.get('/privado/:id',    (req,res) => res.sendFile(path.join(__dirname,'public','chat-privado.html')));*/
+
+
+
+
 
 // 5) WebSockets
 let usuariosPorSala = {};
@@ -193,6 +197,8 @@ io.on('connection', socket => {
     }
   });
 });
+
+
 
 // 6) Levantar servidor
 server.listen(3000, () => {
