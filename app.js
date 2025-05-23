@@ -153,11 +153,20 @@ let usuariosPorSala = {};
 io.on('connection', socket => {
   console.log('🔌 Nuevo socket conectado');
 
-  socket.on('usuario conectado', nombre => {
+ /* socket.on('usuario conectado', nombre => {
     socket.nombre = nombre;
     if (!usuariosConectados.includes(nombre)) usuariosConectados.push(nombre);
     io.emit('lista usuarios', usuariosConectados);
-  });
+  });*/
+
+  socket.on('usuario conectado', nombre => {
+  socket.nombre = nombre;
+  if (!usuariosConectados.includes(nombre)) {
+    usuariosConectados.push(nombre);
+    console.log('Usuarios conectados actualizados:', usuariosConectados); // Log
+    io.emit('lista usuarios', usuariosConectados);
+  }
+});
 
   socket.on('unirse a sala', idSala => {
     socket.join(idSala);
@@ -187,7 +196,7 @@ io.on('connection', socket => {
     io.to(data.sala).emit('mensaje privado', { de:data.de, texto:data.texto });
   });
 
-  socket.on('disconnect', () => {
+  /*socket.on('disconnect', () => {
     console.log('Desconectando usuario:', socket.nombre);
     usuariosConectados = usuariosConectados.filter(u=>u!==socket.nombre);
     io.emit('lista usuarios', usuariosConectados);
@@ -195,7 +204,15 @@ io.on('connection', socket => {
       usuariosPorSala[socket.salaId] = usuariosPorSala[socket.salaId].filter(u=>u!==socket.nombre);
       io.to(socket.salaId).emit('usuarios en sala', usuariosPorSala[socket.salaId]);
     }
-  });
+  });*/
+socket.on('disconnect', () => {
+  console.log('Desconectando usuario:', socket.nombre);
+  usuariosConectados = usuariosConectados.filter(u => u !== socket.nombre);
+  console.log('Lista actualizada:s:', usuariosConectados); // Log
+  io.emit('lista usuarios', usuariosConectados);
+});
+
+
 });
 
 
