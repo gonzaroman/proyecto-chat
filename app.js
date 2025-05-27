@@ -11,6 +11,54 @@ const mongoose  = require('mongoose');
 const Usuario = require('./models/Usuario');
 const Sala    = require('./models/Sala');
 
+/**Conexion bdAtlas */
+/*
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const uri = "mongodb+srv://gonzaloromanmarquez:hlpjztz5evaeYnlz@chat.6u6dvvv.mongodb.net/?retryWrites=true&w=majority&appName=chat";
+// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  }
+});
+async function run() {
+  try {
+    // Connect the client to the server	(optional starting in v4.7)
+    await client.connect();
+    // Send a ping to confirm a successful connection
+    await client.db("admin").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+  }
+}
+run().catch(console.dir);*/
+
+///////////////////////////
+
+// 3) Conexión a MongoDB Atlas con Mongoose
+const atlasUri = 'mongodb+srv://gonzaloromanmarquez:hlpjztz5evaeYnlz@chat.6u6dvvv.mongodb.net/chat?retryWrites=true&w=majority';
+mongoose.connect(atlasUri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+  .then(() => console.log('✅ Conectado a MongoDB Atlas'))
+  .catch(err => console.error('❌ Error al conectar con MongoDB Atlas:', err));
+
+
+/////////////////
+
+
+
+
+/**fin conesion bdAtlas */
+
+
+
+
 let usuariosConectados = [];
 
 
@@ -61,12 +109,17 @@ app.use(express.json());
 
 
 // 3) Conexión a MongoDB
-mongoose.connect('mongodb://localhost:27017/chat', {
+/*mongoose.connect('mongodb://localhost:27017/chat', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
   .then(() => console.log('✅ Conectado a MongoDB local'))
-  .catch(err => console.error('❌ Error al conectar con MongoDB:', err));
+  .catch(err => console.error('❌ Error al conectar con MongoDB:', err));*/
+
+  
+
+
+
 
 // ---- RUTAS API ----
 
