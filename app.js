@@ -39,29 +39,23 @@ const app    = express();
 const server = http.createServer(app);
 const io     = require('socket.io')(server, {
   cors: {
-    origin: 'http://localhost:4200',
+    origin: ['http://localhost:4200','http://localhost:3000'],
     methods: ['GET','POST']
   }
 });
 
-app.use(cors({ origin: 'http://localhost:4200' }));
+app.use(cors({ 
+  origin: [
+    'http://localhost:4200',  // aún en dev si lo arrancas ahí
+    'http://localhost:3000'   // para tu build en producción
+  ] 
+}));
 app.use(express.json());
 
 
 //app.use(express.static('public')); //este es para desarrollo
 
-/*PARA PRODUCCIÓN */
-//app.use(express.static(path.join(__dirname,'dist','frontend-chat')));
-//app.get(/.*/, (req, res) => {
- // res.sendFile(path.join(__dirname,'dist','frontend-chat','index.html'));
-//});
 
-app.use(express.static(clientDir));
-
-app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(clientDir, 'index.html'));
-});
-/*Fin PARA PRODUCCIÓN */
 
 
 
@@ -78,7 +72,9 @@ mongoose.connect('mongodb://localhost:27017/chat', {
 
 // Listar todos los usuarios y su estado online
 
-app.get('/usuarios', async (req, res) => {
+const api = express.Router();
+
+api.get('/usuarios', async (req, res) => {
   try {
     const todos = await Usuario.find({}, { nombre:1, _id:0 });
     const lista = todos.map(u => ({
@@ -93,7 +89,7 @@ app.get('/usuarios', async (req, res) => {
 });
 
 // Listar salas propias
-app.get('/salas/propias', async (req, res) => {
+api.get('/salas/propias', async (req, res) => {
   const creador = req.query.creador;
   if (!creador) return res.status(400).json({ error:'Falta parámetro creador' });
   try {
@@ -106,7 +102,7 @@ app.get('/salas/propias', async (req, res) => {
 });
 
 // Listar conversaciones privadas de un usuario
-app.get('/privados/:usuario', async (req, res) => {
+api.get('/privados/:usuario', async (req, res) => {
   try {
     const user = req.params.usuario;
     const salas = await Mensaje.distinct('sala', {
@@ -126,23 +122,23 @@ app.get('/privados/:usuario', async (req, res) => {
 
 
 // CRUD Salas
-app.get('/salas', async (req, res) => {
+api.get('/salas', async (req, res) => {
   const salas = await Sala.find().sort({ fechaCreacion:-1 });
   res.json(salas);
 });
-app.post('/salas', async (req, res) => {
+api.post('/salas', async (req, res) => {
   const { nombre, creador } = req.body;
   const id = nombre.toLowerCase().replace(/\s+/g,'-') + '-' + Math.random().toString(36).substring(2,5);
   const nueva = new Sala({ id, nombre, creador });
   await nueva.save();
   res.json({ id });
 });
-app.get('/salas/:id', async (req, res) => {
+api.get('/salas/:id', async (req, res) => {
   const sala = await Sala.findOne({ id:req.params.id });
   if (!sala) return res.status(404).json({ error:'Sala no encontrada' });
   res.json(sala);
 });
-app.delete('/salas/:id', async (req, res) => {
+api.delete('/salas/:id', async (req, res) => {
   const sala = await Sala.findOneAndDelete({ id:req.params.id });
   if (!sala) return res.status(404).json({ error:'Sala no encontrada' });
   await Mensaje.deleteMany({ sala:req.params.id });
@@ -150,14 +146,14 @@ app.delete('/salas/:id', async (req, res) => {
 });
 
 // Registro / Login
-app.post('/registro', async (req, res) => {
+api.post('/registro', async (req, res) => {
   const { nombre, contraseña } = req.body;
   if (!nombre||!contraseña) return res.status(400).json({ error:'Faltan datos' });
   if (await Usuario.findOne({ nombre })) return res.status(400).json({ error:'El usuario ya existe' });
   await new Usuario({ nombre, contraseña }).save();
   res.status(201).json({ mensaje:'Usuario creado' });
 });
-app.post('/login', async (req, res) => {
+api.post('/login', async (req, res) => {
   const { nombre, contraseña } = req.body;
   const user = await Usuario.findOne({ nombre });
   if (!user||user.contraseña!==contraseña) return res.status(401).json({ error:'Usuario o contraseña incorrectos' });
@@ -165,15 +161,16 @@ app.post('/login', async (req, res) => {
 });
 
 
+app.use('/api', api);
 
+/*PARA PRODUCCIÓN */
 
-// 4) Rutas estáticas (cliente)
-/*app.get('/',               (req,res) => res.sendFile(path.join(__dirname,'public','home.html')));
-app.get('/sala/:id',       (req,res) => res.sendFile(path.join(__dirname,'public','chat.html')));
-app.get('/crear-sala.html',(req,res) => res.sendFile(path.join(__dirname,'public','crear-sala.html')));
-app.get('/privado/:id',    (req,res) => res.sendFile(path.join(__dirname,'public','chat-privado.html')));*/
+app.use(express.static(clientDir));
 
-
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(clientDir, 'index.html'));
+});
+/*Fin PARA PRODUCCIÓN */
 
 
 
@@ -182,11 +179,7 @@ let usuariosPorSala = {};
 io.on('connection', socket => {
   console.log('🔌 Nuevo socket conectado');
 
- /* socket.on('usuario conectado', nombre => {
-    socket.nombre = nombre;
-    if (!usuariosConectados.includes(nombre)) usuariosConectados.push(nombre);
-    io.emit('lista usuarios', usuariosConectados);
-  });*/
+
 
   socket.on('usuario conectado', nombre => {
   socket.nombre = nombre;
@@ -225,15 +218,7 @@ io.on('connection', socket => {
     io.to(data.sala).emit('mensaje privado', { de:data.de, texto:data.texto });
   });
 
-  /*socket.on('disconnect', () => {
-    console.log('Desconectando usuario:', socket.nombre);
-    usuariosConectados = usuariosConectados.filter(u=>u!==socket.nombre);
-    io.emit('lista usuarios', usuariosConectados);
-    if (socket.salaId && usuariosPorSala[socket.salaId]) {
-      usuariosPorSala[socket.salaId] = usuariosPorSala[socket.salaId].filter(u=>u!==socket.nombre);
-      io.to(socket.salaId).emit('usuarios en sala', usuariosPorSala[socket.salaId]);
-    }
-  });*/
+
 socket.on('disconnect', () => {
   console.log('Desconectando usuario:', socket.nombre);
   usuariosConectados = usuariosConectados.filter(u => u !== socket.nombre);
