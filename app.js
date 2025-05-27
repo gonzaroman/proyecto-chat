@@ -14,6 +14,17 @@ const Sala    = require('./models/Sala');
 let usuariosConectados = [];
 
 
+const clientDir = path.join(
+  __dirname,
+  '..',               // sube de proyecto-chat a chat-gonza
+  'frontend-chat',    // entra en frontend-chat
+  'dist',
+  'fontend-chat',     // coincide con tu outputPath
+  'browser'           // subcarpeta que genera Angular 19
+);
+
+
+
 // Esquema de mensaje
 const EsquemaMensaje = new mongoose.Schema({
   usuario: String,
@@ -35,7 +46,25 @@ const io     = require('socket.io')(server, {
 
 app.use(cors({ origin: 'http://localhost:4200' }));
 app.use(express.json());
-app.use(express.static('public'));
+
+
+//app.use(express.static('public')); //este es para desarrollo
+
+/*PARA PRODUCCIÓN */
+//app.use(express.static(path.join(__dirname,'dist','frontend-chat')));
+//app.get(/.*/, (req, res) => {
+ // res.sendFile(path.join(__dirname,'dist','frontend-chat','index.html'));
+//});
+
+app.use(express.static(clientDir));
+
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(clientDir, 'index.html'));
+});
+/*Fin PARA PRODUCCIÓN */
+
+
+
 
 // 3) Conexión a MongoDB
 mongoose.connect('mongodb://localhost:27017/chat', {
