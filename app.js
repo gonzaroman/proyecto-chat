@@ -97,6 +97,33 @@ app.get('/privados/:usuario', async (req, res) => {
   }
 });
 
+/* PARA EL ADMINISTRADOR */
+app.get('/admin/usuarios', async (req, res) => {
+  const usuarios = await Usuario.find({}, { nombre: 1 });
+  res.json(usuarios);
+});
+
+app.delete('/admin/usuarios/:nombre', async (req, res) => {
+  const eliminado = await Usuario.findOneAndDelete({ nombre: req.params.nombre });
+  if (!eliminado) return res.status(404).json({ error: 'Usuario no encontrado' });
+  res.json({ mensaje: 'Usuario eliminado' });
+});
+
+app.get('/admin/salas', async (req, res) => {
+  const salas = await Sala.find();
+  res.json(salas);
+});
+
+app.delete('/admin/salas/:id', async (req, res) => {
+  const sala = await Sala.findOneAndDelete({ id: req.params.id });
+  if (!sala) return res.status(404).json({ error: 'Sala no encontrada' });
+  await Mensaje.deleteMany({ sala: req.params.id }); // borra mensajes
+  res.json({ mensaje: 'Sala eliminada correctamente' });
+});
+
+/*FIN PARA EL ADMINISTRADOR */
+
+
 // CRUD de Salas
 app.get('/salas', async (req, res) => {
   const salas = await Sala.find().sort({ fechaCreacion: -1 });
