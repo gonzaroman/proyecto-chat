@@ -154,6 +154,23 @@ app.delete('/salas/:id', async (req, res) => {
   res.json({ mensaje: 'Sala eliminada correctamente' });
 });
 
+//editar el nombre de la sala
+app.put('/salas/:id', async (req, res) => {
+  const { nombre } = req.body;
+  if (!nombre) return res.status(400).json({ error: 'Falta el nuevo nombre' });
+
+  const sala = await Sala.findOneAndUpdate(
+    { id: req.params.id },
+    { nombre },
+    { new: true }
+  );
+
+  if (!sala) return res.status(404).json({ error: 'Sala no encontrada' });
+
+  res.json({ mensaje: 'Nombre actualizado', sala });
+});
+
+
 // Registro de nuevos usuarios
 app.post('/registro', async (req, res) => {
   const { nombre, contraseña } = req.body;
