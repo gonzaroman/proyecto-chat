@@ -1,47 +1,42 @@
+// ------------------- 1) Dependencias y Modelos -------------------
+const express = require('express');      // Framework para crear el servidor web
+const cors = require('cors');            // Middleware para permitir peticiones de otros orígenes
+const http = require('http');            // Módulo para crear servidor HTTP puro
+const path = require('path');            // Módulo para manejar rutas de archivos
+const mongoose = require('mongoose');    // ODM para conectarse y trabajar con MongoDB
 
-// 1) Dependencias y modelos
-const express = require('express');      // Framework para construir servidores HTTP
-const cors = require('cors');            // Middleware para permitir peticiones desde otros orígenes
-const http = require('http');            // Módulo para crear el servidor HTTP
-const path = require('path');            // Módulo para trabajar con rutas de archivos
-const mongoose = require('mongoose');    // ODM para trabajar con MongoDB desde Node.js
-
-// Modelos de la base de datos
+// Modelos de Mongoose
 const Usuario = require('./models/Usuario');
 const Sala = require('./models/Sala');
 
-// Lista para controlar usuarios conectados
+// Lista de usuarios conectados y estructura para usuarios por sala
 let usuariosConectados = [];
 
-// Esquema del modelo de datos para los mensajes del chat
+// Modelo de los mensajes (también con Mongoose)
 const EsquemaMensaje = new mongoose.Schema({
   usuario: String,
-  texto: {
-    type: String,
-   // required: true,
-  //  maxlength: 500 // Limita a 500 caracteres
-  },
+  texto: String,
   sala: String,
   fecha: { type: Date, default: Date.now }
 });
 const Mensaje = mongoose.model('Mensaje', EsquemaMensaje);
 
-// 2) Configuración de Express y CORS
-const app = express();                         // Instancia de la aplicación
-const server = http.createServer(app);         // Crear el servidor HTTP
-const io = require('socket.io')(server, {      // Crear servidor WebSocket
+// ------------------- 2) Configuración de Express -------------------
+const app = express();
+const server = http.createServer(app);
+const io = require('socket.io')(server, {
   cors: {
-    origin: 'http://localhost:4200',           // Permitir solo conexiones desde el frontend local
+    origin: 'http://localhost:4200',  // Permitimos peticiones desde Angular local
     methods: ['GET', 'POST']
   }
 });
 
-// Middleware para permitir CORS y parsear JSON
+// Middlewares
 app.use(cors({ origin: 'http://localhost:4200' }));
 app.use(express.json());
-app.use(express.static('public')); // Servir archivos estáticos
+app.use(express.static('public')); // Carpeta para archivos estáticos
 
-// 3) Conexión a MongoDB
+// ------------------- 3) Conexión a MongoDB -------------------
 mongoose.connect('mongodb://localhost:27017/chat', {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -49,9 +44,9 @@ mongoose.connect('mongodb://localhost:27017/chat', {
 .then(() => console.log('✅ Conectado a MongoDB local'))
 .catch(err => console.error('❌ Error al conectar con MongoDB:', err));
 
-// ---- RUTAS API ----
+// ------------------- 4) Rutas HTTP (REST API) -------------------
 
-// Obtener todos los usuarios registrados y si están conectados
+// Obtener todos los usuarios y marcar si están online
 app.get('/usuarios', async (req, res) => {
   try {
     const todos = await Usuario.find({}, { nombre: 1, _id: 0 });
@@ -61,12 +56,11 @@ app.get('/usuarios', async (req, res) => {
     }));
     res.json(lista);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Error al listar usuarios' });
   }
 });
 
-// Obtener las salas creadas por un usuario concreto
+// Salas propias de un usuario
 app.get('/salas/propias', async (req, res) => {
   const creador = req.query.creador;
   if (!creador) return res.status(400).json({ error: 'Falta parámetro creador' });
@@ -74,12 +68,11 @@ app.get('/salas/propias', async (req, res) => {
     const propias = await Sala.find({ creador });
     res.json(propias);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Error interno' });
   }
 });
 
-// Obtener las conversaciones privadas de un usuario
+// Conversaciones privadas del usuario
 app.get('/privados/:usuario', async (req, res) => {
   try {
     const user = req.params.usuario;
@@ -92,45 +85,36 @@ app.get('/privados/:usuario', async (req, res) => {
     });
     res.json(conv);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Error al obtener privados' });
   }
 });
 
-/* PARA EL ADMINISTRADOR */
+// --- ADMINISTRADOR ---
 app.get('/admin/usuarios', async (req, res) => {
   const usuarios = await Usuario.find({}, { nombre: 1 });
   res.json(usuarios);
 });
-
 app.delete('/admin/usuarios/:nombre', async (req, res) => {
   const eliminado = await Usuario.findOneAndDelete({ nombre: req.params.nombre });
   if (!eliminado) return res.status(404).json({ error: 'Usuario no encontrado' });
   res.json({ mensaje: 'Usuario eliminado' });
 });
-
 app.get('/admin/salas', async (req, res) => {
   const salas = await Sala.find();
   res.json(salas);
 });
-
 app.delete('/admin/salas/:id', async (req, res) => {
   const sala = await Sala.findOneAndDelete({ id: req.params.id });
   if (!sala) return res.status(404).json({ error: 'Sala no encontrada' });
-  await Mensaje.deleteMany({ sala: req.params.id }); // borra mensajes
+  await Mensaje.deleteMany({ sala: req.params.id });
   res.json({ mensaje: 'Sala eliminada correctamente' });
 });
 
-/*FIN PARA EL ADMINISTRADOR */
-
-
-// CRUD de Salas
+// --- CRUD de salas ---
 app.get('/salas', async (req, res) => {
   const salas = await Sala.find().sort({ fechaCreacion: -1 });
   res.json(salas);
 });
-
-// Crear una nueva sala
 app.post('/salas', async (req, res) => {
   const { nombre, creador } = req.body;
   const id = nombre.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substring(2, 5);
@@ -138,40 +122,26 @@ app.post('/salas', async (req, res) => {
   await nueva.save();
   res.json({ id });
 });
-
-// Obtener una sala por su ID
 app.get('/salas/:id', async (req, res) => {
   const sala = await Sala.findOne({ id: req.params.id });
   if (!sala) return res.status(404).json({ error: 'Sala no encontrada' });
   res.json(sala);
 });
-
-// Eliminar una sala por ID
 app.delete('/salas/:id', async (req, res) => {
   const sala = await Sala.findOneAndDelete({ id: req.params.id });
   if (!sala) return res.status(404).json({ error: 'Sala no encontrada' });
   await Mensaje.deleteMany({ sala: req.params.id });
   res.json({ mensaje: 'Sala eliminada correctamente' });
 });
-
-//editar el nombre de la sala
 app.put('/salas/:id', async (req, res) => {
   const { nombre } = req.body;
   if (!nombre) return res.status(400).json({ error: 'Falta el nuevo nombre' });
-
-  const sala = await Sala.findOneAndUpdate(
-    { id: req.params.id },
-    { nombre },
-    { new: true }
-  );
-
+  const sala = await Sala.findOneAndUpdate({ id: req.params.id }, { nombre }, { new: true });
   if (!sala) return res.status(404).json({ error: 'Sala no encontrada' });
-
   res.json({ mensaje: 'Nombre actualizado', sala });
 });
 
-
-// Registro de nuevos usuarios
+// --- Registro e inicio de sesión ---
 app.post('/registro', async (req, res) => {
   const { nombre, contraseña } = req.body;
   if (!nombre || !contraseña) return res.status(400).json({ error: 'Faltan datos' });
@@ -179,8 +149,6 @@ app.post('/registro', async (req, res) => {
   await new Usuario({ nombre, contraseña }).save();
   res.status(201).json({ mensaje: 'Usuario creado' });
 });
-
-// Login de usuario
 app.post('/login', async (req, res) => {
   const { nombre, contraseña } = req.body;
   const user = await Usuario.findOne({ nombre });
@@ -188,20 +156,20 @@ app.post('/login', async (req, res) => {
   res.json({ mensaje: 'Inicio de sesión correcto' });
 });
 
-// 5) WebSockets
+// ------------------- 5) WebSockets -------------------
 let usuariosPorSala = {};
-io.on('connection', socket => {
 
-  // Cuando un usuario se conecta
+io.on('connection', socket => {
+  // Nuevo usuario conectado
   socket.on('usuario conectado', nombre => {
     socket.nombre = nombre;
     if (!usuariosConectados.includes(nombre)) {
       usuariosConectados.push(nombre);
-      io.emit('lista usuarios', usuariosConectados); // Actualiza la lista a todos
+      io.emit('lista usuarios', usuariosConectados);
     }
   });
 
-  // Unirse a una sala pública
+  // Unirse a sala pública
   socket.on('unirse a sala', idSala => {
     socket.join(idSala);
     socket.salaId = idSala;
@@ -211,20 +179,20 @@ io.on('connection', socket => {
     }
     io.to(idSala).emit('usuarios en sala', usuariosPorSala[idSala]);
 
-    // Enviar historial de mensajes
+    // Cargar historial de mensajes
     Mensaje.find({ sala: idSala }).sort({ fecha: 1 }).limit(100)
       .then(ms => socket.emit('mensajes anteriores', ms));
   });
 
   // Enviar mensaje público
   socket.on('mensaje del chat', m => {
-     if (!m.texto || m.texto.length > 500) return; // Ignorar mensajes vacíos o largos
+    if (!m.texto || m.texto.length > 500) return;
     new Mensaje(m).save().then(() => {
       io.to(m.sala).emit('mensaje del chat', m);
     });
   });
 
-  // Unirse a una sala privada
+  // Unirse a sala privada
   socket.on('unirse a sala privada', async salaPriv => {
     socket.join(salaPriv);
     const ms = await Mensaje.find({ sala: salaPriv }).sort({ fecha: 1 }).limit(100);
@@ -232,29 +200,25 @@ io.on('connection', socket => {
   });
 
   // Enviar mensaje privado
-
   socket.on('mensaje privado', async data => {
-  if (!data.texto || data.texto.length > 500) return; //ignorar mensajes vacios o largos
-    
+    if (!data.texto || data.texto.length > 500) return;
+    await new Mensaje({
+      usuario: data.de,
+      texto: data.texto,
+      sala: data.sala,
+      fecha: new Date()
+    }).save();
+    io.to(data.sala).emit('mensaje privado', { de: data.de, texto: data.texto });
+  });
 
-  await new Mensaje({
-    usuario: data.de,
-    texto: data.texto,
-    sala: data.sala,
-    fecha: new Date()
-  }).save();
-
-  io.to(data.sala).emit('mensaje privado', { de: data.de, texto: data.texto });
-});
-
-  // Al desconectarse el usuario
+  // Desconexión del usuario
   socket.on('disconnect', () => {
     usuariosConectados = usuariosConectados.filter(u => u !== socket.nombre);
     io.emit('lista usuarios', usuariosConectados);
   });
 });
 
-// 6) Levantar servidor en puerto 3000
+// ------------------- 6) Iniciar el servidor -------------------
 server.listen(3000, () => {
   console.log('✅ Servidor corriendo en puerto 3000');
 });
